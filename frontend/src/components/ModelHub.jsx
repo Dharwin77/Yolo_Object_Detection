@@ -122,7 +122,7 @@ export default function ModelHub({ backendOnline }) {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Downloading from pjreddie.com mirrors</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Downloading from Hugging Face CDN mirrors (ultra-fast)</span>
               <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{downloadProgress.progress}%</span>
             </div>
             <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>

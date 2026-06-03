@@ -112,13 +112,13 @@ def download_model_task(model_name):
         urls = {}
         if model_name == "yolov3":
             urls = {
-                "yolov3.weights": "https://pjreddie.com/media/files/yolov3.weights",
+                "yolov3.weights": "https://huggingface.co/prakhar5342/yolov3-model/resolve/main/yolov3.weights",
                 "yolov3.cfg": "https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg",
                 "coco.names": "https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names"
             }
         elif model_name == "yolov3_tiny":
             urls = {
-                "yolov3-tiny.weights": "https://pjreddie.com/media/files/yolov3-tiny.weights",
+                "yolov3-tiny.weights": "https://huggingface.co/ggml-org/models-moved/resolve/main/yolo/yolov3-tiny.weights",
                 "yolov3-tiny.cfg": "https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3-tiny.cfg",
                 "coco.names": "https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names"
             }
@@ -445,6 +445,9 @@ def detect_image():
             "latency_ms": round(latency * 1000, 2),
             "annotated_image": f"data:image/jpeg;base64,{base64_image}"
         })
+    except FileNotFoundError as fnf_err:
+        app.logger.warning(f"[DEBUG] File not found error: {str(fnf_err)}")
+        return jsonify({"error": f"{str(fnf_err)} Please go to the Model Hub tab to download it."}), 400
     except Exception as e:
         app.logger.error(f"[DEBUG] Exception during detection: {str(e)}")
         import traceback
