@@ -21,6 +21,7 @@ openh264-*.dll
 # ── Runtime output directories ───────────────────────────────────────────────
 processed_media/
 uploads/
+Object detection using video/output/
 
 # ── MobileNet SSD Caffe model weights (large binaries) ──────────────────────
 real-time-object-detection/*.caffemodel
