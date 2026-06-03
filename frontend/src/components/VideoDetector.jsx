@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Film, AlertCircle, Trash2, Video, RefreshCw, Layers, CheckCircle } from 'lucide-react';
+import API from '../api';
 
 export default function VideoDetector({ selectedSample, clearSample, backendOnline }) {
   const [videoFile, setVideoFile] = useState(null);
@@ -19,7 +20,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
 
   useEffect(() => {
     if (selectedSample) {
-      const url = `http://localhost:5000/api/samples/videos/${selectedSample}`;
+      const url = `${API}/api/samples/videos/${selectedSample}`;
       setVideoPreview(url);
       setVideoFile(null); // Indicates sample video
       setTaskId(null);
@@ -73,7 +74,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/process-video', {
+      const res = await fetch(`${API}/api/process-video`, {
         method: 'POST',
         body: formData
       });
@@ -99,7 +100,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
 
     pollIntervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/video-progress/${tid}`);
+        const res = await fetch(`${API}/api/video-progress/${tid}`);
         const data = await res.json();
 
         if (res.ok) {
@@ -109,7 +110,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
             clearInterval(pollIntervalRef.current);
             setProcessing(false);
             setStatus('success');
-            setOutputVideoUrl(`http://localhost:5000${data.video_url}`);
+            setOutputVideoUrl(`${API}${data.video_url}`);
           } else if (data.status === 'error') {
             clearInterval(pollIntervalRef.current);
             setProcessing(false);

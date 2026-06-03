@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Server, Download, CheckCircle, RefreshCw, Cpu, Database, AlertCircle } from 'lucide-react';
+import API from '../api';
 
 export default function ModelHub({ backendOnline }) {
   const [models, setModels] = useState({});
@@ -11,7 +12,7 @@ export default function ModelHub({ backendOnline }) {
   const fetchStatus = async () => {
     if (!backendOnline) return;
     try {
-      const res = await fetch('http://localhost:5000/api/status');
+      const res = await fetch(`${API}/api/status`);
       const data = await res.json();
       if (res.ok) {
         setModels(data.models || {});
@@ -43,7 +44,7 @@ export default function ModelHub({ backendOnline }) {
 
     progressPollIntervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/download-progress');
+        const res = await fetch(`${API}/api/download-progress`);
         const data = await res.json();
         
         if (res.ok) {
@@ -65,7 +66,7 @@ export default function ModelHub({ backendOnline }) {
   const triggerDownload = async (modelKey) => {
     try {
       setDownloadProgress({ model: modelKey, progress: 0, status: 'downloading', error: null });
-      const res = await fetch('http://localhost:5000/api/download-model', {
+      const res = await fetch(`${API}/api/download-model`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: modelKey })

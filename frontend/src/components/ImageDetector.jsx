@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Sliders, Image, Download, Trash2, Layers, FileJson, AlertCircle } from 'lucide-react';
+import API from '../api';
 
 export default function ImageDetector({ selectedSample, clearSample, backendOnline }) {
   const [image, setImage] = useState(null);           // Uploaded File object
@@ -40,7 +41,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
     if (selectedSample) {
       setActiveSample(selectedSample);
       setImage(null);
-      setImagePreview(`http://localhost:5000/api/samples/images/${selectedSample}`);
+      setImagePreview(`${API}/api/samples/images/${selectedSample}`);
       setResults(null);
       setError(null);
     }
@@ -93,7 +94,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/detect', {
+      const res = await fetch(`${API}/api/detect`, {
         method: 'POST',
         body: formData
       });

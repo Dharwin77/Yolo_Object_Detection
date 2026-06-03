@@ -593,5 +593,8 @@ def serve_sample_video(filename):
 
 # Run server
 if __name__ == '__main__':
-    print("[INFO] Starting Flask backend server on http://localhost:5000...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    print(f"[INFO] Starting Flask backend on http://0.0.0.0:{port}  (debug={debug})")
+    app.run(host='0.0.0.0', port=port, debug=debug)
+

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Play, Image, Camera, Server, Cpu, Layers, HelpCircle, Activity } from 'lucide-react';
+import API from '../api';
 
 export default function Dashboard({ onTabChange, selectSampleImage, selectSampleVideo, backendOnline }) {
   const [samples, setSamples] = useState({ images: [], videos: [] });
@@ -10,10 +11,10 @@ export default function Dashboard({ onTabChange, selectSampleImage, selectSample
       if (!backendOnline) return;
       setLoadingSamples(true);
       try {
-        const imgRes = await fetch('http://localhost:5000/api/samples/images');
+        const imgRes = await fetch(`${API}/api/samples/images`);
         const imgData = await imgRes.json();
         
-        const vidRes = await fetch('http://localhost:5000/api/samples/videos');
+        const vidRes = await fetch(`${API}/api/samples/videos`);
         const vidData = await vidRes.json();
         
         setSamples({
@@ -153,7 +154,7 @@ export default function Dashboard({ onTabChange, selectSampleImage, selectSample
                     className="glass-panel-interactive"
                   >
                     <img 
-                      src={`http://localhost:5000/api/samples/images/${img}`} 
+                      src={`${API}/api/samples/images/${img}`} 
                       alt={img} 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />

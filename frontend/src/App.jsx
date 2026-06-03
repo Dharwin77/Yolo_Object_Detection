@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Image, Video, Camera, Database, Activity, Cpu } from 'lucide-react';
 import './App.css';
+import API from './api';
 
 // Component imports
 import Dashboard from './components/Dashboard';
@@ -19,7 +20,7 @@ export default function App() {
   useEffect(() => {
     async function checkBackend() {
       try {
-        const res = await fetch('http://localhost:5000/api/status');
+        const res = await fetch(`${API}/api/status`);
         if (res.ok) {
           setBackendOnline(true);
         } else {
@@ -148,7 +149,7 @@ export default function App() {
                 {backendOnline ? 'API Connected' : 'API Offline'}
               </span>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {backendOnline ? 'localhost:5000' : 'Disconnected'}
+                {backendOnline ? (import.meta.env.VITE_API_URL || 'localhost:5000') : 'Disconnected'}
               </span>
             </div>
           </div>
