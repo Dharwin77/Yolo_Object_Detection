@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sliders, Image, Download, Trash2, Layers, FileJson, AlertCircle } from 'lucide-react';
+import { Upload, Sliders, Image, Download, Trash2, FileJson, AlertCircle } from 'lucide-react';
 import API from '../api';
 
 export default function ImageDetector({ selectedSample, clearSample, backendOnline }) {
@@ -62,7 +62,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
     const file = e.target.files[0];
     if (file) {
       setImage(file);
-      setActiveSample(null);   // ← clear sample when user uploads their own file
+      setActiveSample(null);
       setImagePreview(URL.createObjectURL(file));
       setResults(null);
       setError(null);
@@ -82,13 +82,11 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
     formData.append('threshold', threshold);
 
     if (image) {
-      // User-uploaded file — send binary directly
       formData.append('image', image);
     } else if (activeSample) {
-      // Sample image — backend reads it from disk (avoids blob/cache issues)
       formData.append('sample_name', activeSample);
     } else {
-      setError('No image selected. Please upload an image or pick a sample from the Dashboard.');
+      setError('No image selected. Please upload an image or pick a sample.');
       setLoading(false);
       return;
     }
@@ -121,7 +119,6 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
     clearSample();
   };
 
-  // Compile frequency of classes for our SVG Chart
   const getClassStats = () => {
     if (!results || !results.detections) return [];
     const stats = {};
@@ -134,7 +131,6 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
   const stats = getClassStats();
   const maxCount = stats.length > 0 ? Math.max(...stats.map(s => s.count)) : 1;
 
-  // Export results to JSON file
   const exportJSON = () => {
     if (!results) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(results.detections, null, 2));
@@ -151,24 +147,24 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
       
       {/* Sidebar - Settings Panel */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'fit-content' }}>
-        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
           <Sliders size={20} className="text-gradient" /> Configurations
         </h2>
         
         {/* Model Selection */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Detection Model</label>
+          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Detection Model</label>
           <select 
             value={model} 
             onChange={(e) => setModel(e.target.value)}
             style={{
               padding: '0.75rem',
               borderRadius: '8px',
-              background: 'rgba(255,255,255,0.05)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
               outline: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '0.9rem'
             }}
           >
             <option value="mobilenet_ssd">MobileNet SSD (Caffe)</option>
@@ -179,9 +175,9 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
 
         {/* Confidence Threshold */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600 }}>
             <span style={{ color: 'var(--text-secondary)' }}>Min Confidence</span>
-            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{Math.round(confidence * 100)}%</span>
+            <span style={{ color: 'var(--primary)' }} className="text-glow-primary">{Math.round(confidence * 100)}%</span>
           </div>
           <input 
             type="range" 
@@ -193,11 +189,11 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
           />
         </div>
 
-        {/* NMS Threshold (all models) */}
+        {/* NMS Threshold */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600 }}>
             <span style={{ color: 'var(--text-secondary)' }}>NMS Threshold</span>
-            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{threshold}</span>
+            <span style={{ color: 'var(--primary)' }} className="text-glow-primary">{threshold}</span>
           </div>
           <input 
             type="range" 
@@ -207,8 +203,8 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
             value={threshold} 
             onChange={(e) => setThreshold(parseFloat(e.target.value))} 
           />
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '-0.25rem' }}>
-            Higher = keep more overlapping boxes (better for dense scenes)
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '-0.25rem', opacity: 0.8 }}>
+            Higher = keep more overlapping boxes (dense scenes)
           </p>
         </div>
 
@@ -216,28 +212,28 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
         <button 
           onClick={triggerDetection}
           disabled={loading || !imagePreview || !backendOnline}
-          className="glass-panel"
           style={{
             padding: '0.85rem',
-            background: loading || !imagePreview || !backendOnline ? 'rgba(255,255,255,0.02)' : 'var(--primary-gradient)',
+            background: loading || !imagePreview || !backendOnline ? 'rgba(0,0,0,0.02)' : 'var(--primary-gradient)',
             border: 'none',
             borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 600,
+            color: loading || !imagePreview || !backendOnline ? 'var(--text-muted)' : '#fff',
+            fontWeight: 700,
             cursor: loading || !imagePreview || !backendOnline ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.25s',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
             marginTop: '0.5rem',
-            opacity: loading || !imagePreview || !backendOnline ? 0.5 : 1
+            opacity: loading || !imagePreview || !backendOnline ? 0.4 : 1,
+            boxShadow: loading || !imagePreview || !backendOnline ? 'none' : '0 0 15px rgba(16,185,129,0.2)'
           }}
         >
           {loading ? (
             <>
               <div className="spinner" style={{ width: '16px', height: '16px' }} />
-              Running Detection...
+              Running Engine...
             </>
           ) : (
             'Process Image'
@@ -246,7 +242,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
 
         {/* Status Warnings */}
         {!backendOnline && (
-          <div className="glass-panel" style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', color: '#f87171', display: 'flex', gap: '0.5rem' }}>
+          <div className="glass-panel" style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', color: '#f87171', display: 'flex', gap: '0.5rem' }}>
             <AlertCircle size={16} style={{ flexShrink: 0 }} />
             <span>Python server offline. Start Flask backend.</span>
           </div>
@@ -254,7 +250,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
       </div>
 
       {/* Main Panel */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {/* Upload Container */}
         {!imagePreview ? (
@@ -269,7 +265,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
               flexDirection: 'column', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              padding: '4rem 2rem',
+              padding: '6rem 2rem',
               gap: '1rem',
               cursor: 'pointer'
             }}
@@ -286,19 +282,20 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'rgba(99, 102, 241, 0.08)',
+              background: 'rgba(16, 185, 129, 0.08)',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)'
             }}>
               <Upload size={32} />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>Drag & Drop Image Here</h3>
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>Drag & Drop Image Here</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Supports PNG, JPG, JPEG up to 10MB</p>
             </div>
-            <button className="glass-panel" style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.03)', fontSize: '0.85rem', color: '#fff', border: '1px solid var(--border-color)' }}>
+            <button className="glass-panel" style={{ padding: '0.5rem 1.25rem', background: 'rgba(0,0,0,0.02)', fontSize: '0.85rem', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
               Browse Files
             </button>
           </div>
@@ -311,15 +308,16 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                 <button 
                   onClick={() => setViewMode('interactive')}
                   style={{
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '6px',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '8px',
                     border: '1px solid',
                     borderColor: viewMode === 'interactive' ? 'var(--primary)' : 'var(--border-color)',
                     background: viewMode === 'interactive' ? 'var(--primary-light)' : 'transparent',
-                    color: viewMode === 'interactive' ? '#fff' : 'var(--text-secondary)',
+                    color: viewMode === 'interactive' ? 'var(--primary)' : 'var(--text-secondary)',
                     fontSize: '0.8rem',
                     cursor: 'pointer',
-                    fontWeight: 500
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
                   }}
                 >
                   Interactive SVG
@@ -328,16 +326,17 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                   onClick={() => setViewMode('server-drawn')}
                   disabled={!results}
                   style={{
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '6px',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '8px',
                     border: '1px solid',
                     borderColor: viewMode === 'server-drawn' ? 'var(--primary)' : 'var(--border-color)',
                     background: viewMode === 'server-drawn' ? 'var(--primary-light)' : 'transparent',
-                    color: viewMode === 'server-drawn' ? '#fff' : 'var(--text-secondary)',
+                    color: viewMode === 'server-drawn' ? 'var(--primary)' : 'var(--text-secondary)',
                     fontSize: '0.8rem',
                     cursor: results ? 'pointer' : 'not-allowed',
                     opacity: results ? 1 : 0.5,
-                    fontWeight: 500
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
                   }}
                 >
                   Server Rendered
@@ -345,8 +344,8 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
               </div>
 
               {results && (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Detected <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{results.detections.length}</span> objects in <span style={{ fontWeight: 600, color: '#10b981' }}>{results.latency_ms}ms</span>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  Detected <span style={{ fontWeight: 700, color: 'var(--accent-green)' }} className="text-glow-green">{results.detections.length}</span> objects in <span style={{ fontWeight: 700, color: 'var(--primary)' }} className="text-glow-primary">{results.latency_ms}ms</span>
                 </div>
               )}
 
@@ -355,7 +354,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                   <button 
                     onClick={exportJSON}
                     className="glass-panel" 
-                    style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.03)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', color: '#fff' }}
+                    style={{ padding: '0.45rem 0.9rem', background: 'rgba(0,0,0,0.02)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 600 }}
                   >
                     <FileJson size={14} /> Export JSON
                   </button>
@@ -365,7 +364,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                     href={results.annotated_image} 
                     download="detected_objects.jpg" 
                     className="glass-panel" 
-                    style={{ padding: '0.4rem 0.8rem', background: 'rgba(255,255,255,0.03)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', textDecoration: 'none', color: '#fff' }}
+                    style={{ padding: '0.45rem 0.9rem', background: 'rgba(0,0,0,0.02)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', textDecoration: 'none', color: 'var(--text-primary)', fontWeight: 600 }}
                   >
                     <Download size={14} /> Save Image
                   </a>
@@ -373,32 +372,39 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                 <button 
                   onClick={clearAll}
                   className="glass-panel" 
-                  style={{ padding: '0.4rem 0.8rem', background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.15)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', color: '#f87171' }}
+                  style={{ padding: '0.45rem 0.9rem', background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.15)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', color: '#f87171', fontWeight: 600 }}
                 >
                   <Trash2 size={14} /> Remove
                 </button>
               </div>
             </div>
 
-            {/* Viewport Box */}
-            <div style={{
-              background: '#090d16',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
+            {/* Viewport Box - Wrapped in HUD frame */}
+            <div className="hud-frame" style={{
               position: 'relative',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              overflow: 'hidden',
               maxHeight: '520px',
-              minHeight: '300px'
+              minHeight: '320px'
             }}>
               
+              {/* Corner brackets */}
+              <div className="hud-bracket hud-bracket-tl" />
+              <div className="hud-bracket hud-bracket-tr" />
+              <div className="hud-bracket hud-bracket-bl" />
+              <div className="hud-bracket hud-bracket-br" />
+
+              {/* Scanning laser line */}
+              {imagePreview && !loading && (
+                <div className="hud-scan-line" />
+              )}
+
               {loading && (
                 <div style={{
                   position: 'absolute',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'rgba(9, 13, 22, 0.7)',
+                  background: 'rgba(248, 250, 252, 0.85)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -407,7 +413,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                   zIndex: 10
                 }}>
                   <div className="spinner" style={{ width: '40px', height: '40px' }} />
-                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Server processing image...</span>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Scanning Image Channels...</span>
                 </div>
               )}
 
@@ -433,6 +439,17 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                       }}
                       viewBox={`0 0 ${imgDims.width} ${imgDims.height}`}
                     >
+                      <defs>
+                        <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="2.5" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                        <filter id="glowForest" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="3.5" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                      </defs>
+
                       {results.detections.map((det, index) => {
                         const scaleX = imgDims.width / imgDims.naturalWidth;
                         const scaleY = imgDims.height / imgDims.naturalHeight;
@@ -458,28 +475,32 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                               y={sy} 
                               width={sw} 
                               height={sh} 
-                              fill={isHovered ? 'rgba(99, 102, 241, 0.15)' : 'transparent'} 
-                              stroke={isHovered ? '#6366f1' : '#10b981'}
-                              strokeWidth={isHovered ? '3' : '2'}
-                              style={{ transition: 'stroke-width 0.1s, fill 0.15s' }}
+                              fill={isHovered ? 'rgba(16, 185, 129, 0.08)' : 'transparent'} 
+                              stroke={isHovered ? '#059669' : '#10b981'}
+                              strokeWidth={isHovered ? '2.5' : '1.5'}
+                              filter={isHovered ? 'url(#glowForest)' : 'url(#glowGreen)'}
+                              style={{ transition: 'all 0.15s ease' }}
                             />
                             {/* Class name Tag */}
                             <g>
                               <rect 
                                 x={sx} 
                                 y={sy - 18 > 0 ? sy - 18 : sy} 
-                                width={Math.max(sw * 0.5, 75)} 
+                                width={Math.max(sw * 0.45, 80)} 
                                 height="18" 
-                                fill={isHovered ? '#6366f1' : '#10b981'} 
+                                fill={isHovered ? '#059669' : '#10b981'} 
+                                filter={isHovered ? 'url(#glowForest)' : 'url(#glowGreen)'}
+                                style={{ transition: 'all 0.15s ease' }}
                               />
                               <text 
-                                x={sx + 4} 
+                                x={sx + 5} 
                                 y={sy - 18 > 0 ? sy - 5 : sy + 13} 
                                 fill="#ffffff" 
-                                fontSize="10px" 
-                                fontWeight="600"
+                                fontSize="9px" 
+                                fontWeight="800"
+                                fontFamily="var(--font-mono)"
                               >
-                                {det.class}
+                                {det.class.toUpperCase()}
                               </text>
                             </g>
                           </g>
@@ -503,24 +524,24 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
 
         {/* Results Analytics and Class List */}
         {results && results.detections && (
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
             
             {/* Details Table */}
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', fontWeight: 600 }}>Detected Categories</h3>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Detected Categories</h3>
               
               {results.detections.length === 0 ? (
-                <div style={{ color: 'var(--text-secondary)', padding: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
-                  No objects detected matching the configured threshold.
+                <div style={{ color: 'var(--text-secondary)', padding: '2rem', textAlign: 'center', fontSize: '0.9rem' }}>
+                  No objects matching the confidence parameters were found.
                 </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left' }}>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Category</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Confidence</th>
-                        <th style={{ padding: '0.75rem 0.5rem' }}>Dimensions (W x H)</th>
+                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Category</th>
+                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Confidence</th>
+                        <th style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>Dimensions (W x H)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -530,26 +551,29 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                           onMouseEnter={() => setHoveredBoxIndex(index)}
                           onMouseLeave={() => setHoveredBoxIndex(null)}
                           style={{ 
-                            borderBottom: '1px solid rgba(255,255,255,0.03)', 
-                            background: hoveredBoxIndex === index ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
-                            transition: 'background 0.15s'
+                            borderBottom: '1px solid rgba(16, 185, 129, 0.05)', 
+                            background: hoveredBoxIndex === index ? 'rgba(16, 185, 129, 0.04)' : 'transparent',
+                            transition: 'background 0.2s'
                           }}
                         >
-                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: hoveredBoxIndex === index ? 'var(--primary)' : 'var(--text-primary)' }}>
+                          <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: hoveredBoxIndex === index ? '#059669' : 'var(--text-primary)' }}>
                             {det.class}
                           </td>
                           <td style={{ padding: '0.75rem 0.5rem' }}>
                             <span style={{ 
-                              padding: '0.2rem 0.4rem', 
-                              borderRadius: '4px', 
-                              fontWeight: 500,
-                              background: det.confidence > 0.7 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                              color: det.confidence > 0.7 ? '#10b981' : '#f59e0b'
+                              padding: '0.2rem 0.5rem', 
+                              borderRadius: '6px', 
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              fontFamily: 'var(--font-mono)',
+                              background: det.confidence > 0.7 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                              color: det.confidence > 0.7 ? '#10b981' : '#f59e0b',
+                              border: det.confidence > 0.7 ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(245,158,11,0.15)'
                             }}>
                               {Math.round(det.confidence * 100)}%
                             </span>
                           </td>
-                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>
+                          <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                             {det.box[2]}px × {det.box[3]}px
                           </td>
                         </tr>
@@ -562,26 +586,25 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
 
             {/* Custom SVG Distribution Chart */}
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', fontWeight: 600 }}>Object Distribution</h3>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Object Distribution</h3>
               
               {stats.length === 0 ? (
-                <div style={{ color: 'var(--text-secondary)', padding: '1.5rem', textAlign: 'center', fontSize: '0.85rem' }}>
-                  No stats to chart.
+                <div style={{ color: 'var(--text-secondary)', padding: '2rem', textAlign: 'center', fontSize: '0.85rem' }}>
+                  No statistics available.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', marginTop: '0.5rem' }}>
                   {stats.map((s, idx) => {
                     const widthPercent = (s.count / maxCount) * 100;
                     return (
-                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                          <span style={{ fontWeight: 500 }}>{s.className}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{s.count} {s.count > 1 ? 'detections' : 'detection'}</span>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s.className}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{s.count} {s.count > 1 ? 'detections' : 'detection'}</span>
                         </div>
-                        {/* Custom visual progress bar representing the count */}
                         <div style={{
-                          height: '8px',
-                          background: 'rgba(255,255,255,0.05)',
+                          height: '6px',
+                          background: 'rgba(16, 185, 129, 0.08)',
                           borderRadius: '4px',
                           overflow: 'hidden'
                         }}>
@@ -590,7 +613,7 @@ export default function ImageDetector({ selectedSample, clearSample, backendOnli
                             width: `${widthPercent}%`,
                             background: 'var(--primary-gradient)',
                             borderRadius: '4px',
-                            transition: 'width 0.5s ease-out'
+                            transition: 'width 0.6s cubic-bezier(0.16, 1, 0.3, 1)'
                           }} />
                         </div>
                       </div>

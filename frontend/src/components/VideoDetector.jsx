@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Film, AlertCircle, Trash2, Video, RefreshCw, Layers, CheckCircle } from 'lucide-react';
+import { Play, Film, AlertCircle, Trash2, Video, RefreshCw } from 'lucide-react';
 import API from '../api';
 
 export default function VideoDetector({ selectedSample, clearSample, backendOnline }) {
@@ -145,13 +145,13 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
       
       {/* Sidebar Configurations */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'fit-content' }}>
-        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
           <Film size={20} className="text-gradient" /> Video Settings
         </h2>
 
         {/* Model Selection */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Detection Model</label>
+          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Detection Model</label>
           <select 
             value={model} 
             onChange={(e) => setModel(e.target.value)}
@@ -159,12 +159,12 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
             style={{
               padding: '0.75rem',
               borderRadius: '8px',
-              background: 'rgba(255,255,255,0.05)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
               outline: 'none',
               cursor: processing ? 'not-allowed' : 'pointer',
-              opacity: processing ? 0.6 : 1
+              opacity: processing ? 0.6 : 1,
+              fontSize: '0.9rem'
             }}
           >
             <option value="mobilenet_ssd">MobileNet SSD (Caffe)</option>
@@ -175,9 +175,9 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
 
         {/* Confidence Threshold */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600 }}>
             <span style={{ color: 'var(--text-secondary)' }}>Confidence</span>
-            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{Math.round(confidence * 100)}%</span>
+            <span style={{ color: 'var(--primary)' }} className="text-glow-primary">{Math.round(confidence * 100)}%</span>
           </div>
           <input 
             type="range" 
@@ -193,9 +193,9 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
         {/* NMS Threshold */}
         {model.startsWith('yolo') && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 600 }}>
               <span style={{ color: 'var(--text-secondary)' }}>NMS Suppression</span>
-              <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{threshold}</span>
+              <span style={{ color: 'var(--primary)' }} className="text-glow-primary">{threshold}</span>
             </div>
             <input 
               type="range" 
@@ -213,22 +213,22 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
         <button 
           onClick={startVideoProcessing}
           disabled={processing || !videoPreview || !backendOnline}
-          className="glass-panel"
           style={{
             padding: '0.85rem',
-            background: processing || !videoPreview || !backendOnline ? 'rgba(255,255,255,0.02)' : 'var(--primary-gradient)',
+            background: processing || !videoPreview || !backendOnline ? 'rgba(0,0,0,0.02)' : 'var(--primary-gradient)',
             border: 'none',
             borderRadius: '8px',
-            color: '#fff',
-            fontWeight: 600,
+            color: processing || !videoPreview || !backendOnline ? 'var(--text-muted)' : '#fff',
+            fontWeight: 700,
             cursor: processing || !videoPreview || !backendOnline ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.25s',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
             marginTop: '0.5rem',
-            opacity: processing || !videoPreview || !backendOnline ? 0.5 : 1
+            opacity: processing || !videoPreview || !backendOnline ? 0.4 : 1,
+            boxShadow: processing || !videoPreview || !backendOnline ? 'none' : '0 0 15px rgba(16,185,129,0.2)'
           }}
         >
           {processing ? (
@@ -238,14 +238,14 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
             </>
           ) : (
             <>
-              <Play size={16} fill="#fff" />
+              <Play size={16} fill="#fff" style={{ stroke: 'none' }} />
               Process Video
             </>
           )}
         </button>
 
         {!backendOnline && (
-          <div className="glass-panel" style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', color: '#f87171', display: 'flex', gap: '0.5rem' }}>
+          <div className="glass-panel" style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)', fontSize: '0.75rem', color: '#f87171', display: 'flex', gap: '0.5rem' }}>
             <AlertCircle size={16} style={{ flexShrink: 0 }} />
             <span>Python server offline. Start Flask backend.</span>
           </div>
@@ -284,19 +284,20 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'rgba(139, 92, 246, 0.08)',
-              color: '#8b5cf6',
+              background: 'rgba(16, 185, 129, 0.08)',
+              color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)'
             }}>
               <Video size={32} />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>Upload Video File</h3>
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>Upload Video File</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Supports MP4, AVI, MOV up to 50MB</p>
             </div>
-            <button className="glass-panel" style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.03)', fontSize: '0.85rem', color: '#fff', border: '1px solid var(--border-color)' }}>
+            <button className="glass-panel" style={{ padding: '0.5rem 1.25rem', background: 'rgba(0,0,0,0.02)', fontSize: '0.85rem', color: 'var(--text-primary)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
               Browse Files
             </button>
           </div>
@@ -307,7 +308,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  Selected Video: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{selectedSample || (videoFile && videoFile.name) || 'Custom Upload'}</span>
+                  Selected Video: <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{selectedSample || (videoFile && videoFile.name) || 'Custom Upload'}</span>
                 </span>
               </div>
               
@@ -317,16 +318,17 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                   disabled={processing}
                   className="glass-panel" 
                   style={{ 
-                    padding: '0.4rem 0.8rem', 
+                    padding: '0.45rem 1rem', 
                     background: 'rgba(239, 68, 68, 0.05)', 
                     borderColor: 'rgba(239, 68, 68, 0.15)', 
                     fontSize: '0.8rem', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    gap: '0.25rem', 
+                    gap: '0.3rem', 
                     cursor: processing ? 'not-allowed' : 'pointer', 
                     color: '#f87171',
-                    opacity: processing ? 0.5 : 1
+                    opacity: processing ? 0.5 : 1,
+                    fontWeight: 600
                   }}
                 >
                   <Trash2 size={14} /> Clear Video
@@ -334,51 +336,71 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
               </div>
             </div>
 
-            {/* Video Player & Processing Overlay */}
-            <div style={{
-              background: '#020617',
-              borderRadius: '12px',
-              border: '1px solid var(--border-color)',
+            {/* Video Player & Processing Overlay wrapped in HUD Frame */}
+            <div className="hud-frame" style={{
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              overflow: 'hidden',
-              minHeight: '380px'
+              minHeight: '380px',
+              background: '#f8fafc'
             }}>
               
+              {/* HUD Brackets */}
+              <div className="hud-bracket hud-bracket-tl" />
+              <div className="hud-bracket hud-bracket-tr" />
+              <div className="hud-bracket hud-bracket-bl" />
+              <div className="hud-bracket hud-bracket-br" />
+
+              {/* Scanning effect */}
+              {videoPreview && status !== 'processing' && (
+                <div className="hud-scan-line" />
+              )}
+
               {status === 'processing' && (
                 <div style={{
                   position: 'absolute',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'rgba(9, 13, 22, 0.9)',
+                  background: 'rgba(248, 250, 252, 0.95)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '1.25rem',
+                  gap: '1.5rem',
                   zIndex: 5
                 }}>
-                  {/* Processing Circular Indicator */}
-                  <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justify: 'center' }}>
+                  {/* Reactor Core progress design */}
+                  <div style={{ position: 'relative', width: '110px', height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    
+                    {/* Spinning reactor core elements */}
+                    <div style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      border: '2px dashed rgba(16, 185, 129, 0.25)',
+                      animation: 'spin 12s linear infinite'
+                    }} />
+
                     <svg style={{ width: '100px', height: '100px', transform: 'rotate(-90deg)' }}>
                       <circle 
-                        cx="50" cy="50" r="40" 
-                        stroke="rgba(255,255,255,0.05)" strokeWidth="8" fill="transparent" 
+                        cx="50" cy="50" r="42" 
+                        stroke="rgba(0,0,0,0.02)" strokeWidth="6" fill="transparent" 
                       />
                       <circle 
-                        cx="50" cy="50" r="40" 
-                        stroke="url(#progressGradient)" strokeWidth="8" fill="transparent" 
-                        strokeDasharray={251.2}
-                        strokeDashoffset={251.2 - (251.2 * progress) / 100}
+                        cx="50" cy="50" r="42" 
+                        stroke="url(#reactorGradient)" strokeWidth="6" fill="transparent" 
+                        strokeDasharray={263.8}
+                        strokeDashoffset={263.8 - (263.8 * progress) / 100}
                         strokeLinecap="round"
-                        style={{ transition: 'stroke-dashoffset 0.3s ease-out' }}
+                        style={{ transition: 'stroke-dashoffset 0.4s ease-out' }}
                       />
                       <defs>
-                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#6366f1" />
-                          <stop offset="100%" stopColor="#8b5cf6" />
+                        <linearGradient id="reactorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#10b981" />
+                          <stop offset="50%" stopColor="#34d399" />
+                          <stop offset="100%" stopColor="#059669" />
                         </linearGradient>
                       </defs>
                     </svg>
@@ -388,16 +410,18 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.2rem',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-display)'
+                      fontSize: '1.25rem',
+                      fontWeight: 800,
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--text-primary)',
+                      textShadow: '0 0 5px rgba(16, 185, 129, 0.25)'
                     }}>
                       {Math.round(progress)}%
                     </div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <h4 style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.25rem' }}>Processing Video Frames...</h4>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Applying {model} detector. This might take a few moments.</p>
+                    <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>Analyzing Frame Pipeline...</h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Applying neural weights. Multi-threading active on Flask core.</p>
                   </div>
                 </div>
               )}
@@ -406,7 +430,7 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                 <div style={{
                   position: 'absolute',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'rgba(9, 13, 22, 0.95)',
+                  background: 'rgba(248, 250, 252, 0.98)',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -418,13 +442,13 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                 }}>
                   <AlertCircle size={40} style={{ color: '#ef4444' }} />
                   <div>
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#f87171', marginBottom: '0.25rem' }}>Video Processing Error</h4>
+                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f87171', marginBottom: '0.25rem' }}>Video Processing Failed</h4>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', maxWidth: '400px' }}>{error}</p>
                   </div>
                   <button 
                     onClick={startVideoProcessing}
                     className="glass-panel" 
-                    style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.03)', fontSize: '0.8rem', color: '#fff', border: '1px solid var(--border-color)', cursor: 'pointer' }}
+                    style={{ padding: '0.5rem 1.25rem', background: 'rgba(0,0,0,0.02)', fontSize: '0.8rem', color: 'var(--text-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 600 }}
                   >
                     Try Again
                   </button>
@@ -434,11 +458,9 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
               {/* Show original preview or processed video player */}
               {status === 'success' && outputVideoUrl ? (
                 <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ background: 'rgba(16,185,129,0.1)', borderBottom: '1px solid rgba(16,185,129,0.2)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#34d399', fontSize: '0.85rem', fontWeight: 500 }}>
-                    <CheckCircle size={16} /> Object Detection Complete! H.264 video ready
+                  <div style={{ background: 'rgba(16,185,129,0.06)', borderBottom: '1px solid rgba(16,185,129,0.15)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontSize: '0.85rem', fontWeight: 600 }}>
+                    <RefreshCw size={14} className="pulse-indicator" /> DNN Render Complete! Ready for H.264 streaming.
                   </div>
-                  {/* key forces React to remount the player whenever the URL changes,
-                      preventing the browser from showing a stale cached black frame */}
                   <video 
                     key={outputVideoUrl}
                     controls 
@@ -447,7 +469,6 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                     playsInline
                     style={{ display: 'block', width: '100%', maxHeight: '420px', background: '#000' }}
                   >
-                    {/* Explicit source + MIME type lets the browser skip codec probing */}
                     <source src={outputVideoUrl} type="video/mp4; codecs=avc1.42E01E" />
                     <source src={outputVideoUrl} type="video/mp4" />
                     Your browser does not support the video tag.
@@ -456,18 +477,19 @@ export default function VideoDetector({ selectedSample, clearSample, backendOnli
                     <a 
                       href={outputVideoUrl} 
                       download="detected_objects.mp4"
-                      className="glass-panel"
                       style={{
-                        padding: '0.5rem 1.5rem',
+                        padding: '0.6rem 2rem',
                         background: 'var(--primary-gradient)',
                         border: 'none',
                         color: '#fff',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         textDecoration: 'none',
                         fontSize: '0.85rem',
+                        borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        boxShadow: '0 0 15px rgba(16,185,129,0.2)'
                       }}
                     >
                       <Film size={16} /> Download Processed Video

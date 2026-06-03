@@ -35,6 +35,41 @@ download_state = {
 
 video_tasks = {}
 
+# Model cache and thread-safety locks
+loaded_nets = {}
+loaded_nets_lock = threading.Lock()
+model_locks = {
+    "mobilenet_ssd": threading.Lock(),
+    "yolov3": threading.Lock(),
+    "yolov3_tiny": threading.Lock()
+}
+
+def get_opencv_net(model_type):
+    global loaded_nets
+    with loaded_nets_lock:
+        if model_type in loaded_nets:
+            return loaded_nets[model_type]
+
+        if model_type == "mobilenet_ssd":
+            prototxt = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.prototxt.txt')
+            caffemodel = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.caffemodel')
+            if not os.path.exists(prototxt) or not os.path.exists(caffemodel) or is_lfs_pointer(caffemodel):
+                raise FileNotFoundError("MobileNet SSD Caffe model or prototxt is missing or corrupted. Please make sure the model files are present.")
+            net = cv2.dnn.readNetFromCaffe(prototxt, caffemodel)
+        elif model_type in ["yolov3", "yolov3_tiny"]:
+            cfg_name = "yolov3.cfg" if model_type == "yolov3" else "yolov3-tiny.cfg"
+            weights_name = "yolov3.weights" if model_type == "yolov3" else "yolov3-tiny.weights"
+            cfg_path = os.path.join(YOLO_COCO_DIR, cfg_name)
+            weights_path = os.path.join(YOLO_COCO_DIR, weights_name)
+            if not os.path.exists(cfg_path) or not os.path.exists(weights_path) or is_lfs_pointer(weights_path) or is_lfs_pointer(cfg_path):
+                raise FileNotFoundError(f"YOLO weights or configs for {model_type} are missing or not fully downloaded.")
+            net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)
+        else:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+        loaded_nets[model_type] = net
+        return net
+
 # Class names for MobileNet SSD
 SSD_CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
                "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
@@ -158,6 +193,9 @@ def download_model_task(model_name):
 
         download_state["status"] = "success"
         download_state["progress"] = 100
+        # Clear model cache if it was loaded previously
+        with loaded_nets_lock:
+            loaded_nets.pop(model_name, None)
     except Exception as e:
         download_state["status"] = "error"
         download_state["error"] = str(e)
@@ -219,38 +257,36 @@ def run_opencv_detection(image, model_type, confidence_threshold=0.5, nms_thresh
     H, W = image.shape[:2]
     detections_list = []
 
-    if model_type == "mobilenet_ssd":
-        # Load Caffe Model
-        prototxt = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.prototxt.txt')
-        caffemodel = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.caffemodel')
-        
-        if not os.path.exists(prototxt) or not os.path.exists(caffemodel) or is_lfs_pointer(caffemodel):
-            raise FileNotFoundError("MobileNet SSD Caffe model or prototxt is missing or corrupted. Please make sure the model files are present.")
-            
-        net = cv2.dnn.readNetFromCaffe(prototxt, caffemodel)
+    net = get_opencv_net(model_type)
+    lock = model_locks.get(model_type)
+    if lock is None:
+        lock = threading.Lock()
+        model_locks[model_type] = lock
 
+    if model_type == "mobilenet_ssd":
         # --- Tiled detection strategy ---
         # Run on the full image + a 2x2 grid of overlapping tiles.
         # This dramatically improves recall for small/dense objects because
         # MobileNet SSD internally resizes to 300x300; tiling preserves local detail.
         all_raw = []
 
-        # 1. Full image pass
-        all_raw.extend(_run_ssd_on_tile(net, image, 0, 0, W, H, confidence_threshold))
+        with lock:
+            # 1. Full image pass
+            all_raw.extend(_run_ssd_on_tile(net, image, 0, 0, W, H, confidence_threshold))
 
-        # 2. 2x2 overlapping tiles (50% overlap)
-        tile_w = W // 2 + W // 8   # 62.5% of width per tile
-        tile_h = H // 2 + H // 8
-        step_x = W // 2
-        step_y = H // 2
-        for row in range(2):
-            for col in range(2):
-                x0 = min(col * step_x, W - tile_w)
-                y0 = min(row * step_y, H - tile_h)
-                x1 = min(x0 + tile_w, W)
-                y1 = min(y0 + tile_h, H)
-                tile = image[y0:y1, x0:x1]
-                all_raw.extend(_run_ssd_on_tile(net, tile, x0, y0, W, H, confidence_threshold))
+            # 2. 2x2 overlapping tiles (50% overlap)
+            tile_w = W // 2 + W // 8   # 62.5% of width per tile
+            tile_h = H // 2 + H // 8
+            step_x = W // 2
+            step_y = H // 2
+            for row in range(2):
+                for col in range(2):
+                    x0 = min(col * step_x, W - tile_w)
+                    y0 = min(row * step_y, H - tile_h)
+                    x1 = min(x0 + tile_w, W)
+                    y1 = min(y0 + tile_h, H)
+                    tile = image[y0:y1, x0:x1]
+                    all_raw.extend(_run_ssd_on_tile(net, tile, x0, y0, W, H, confidence_threshold))
 
         # Apply NMS across all tiles to remove duplicates
         if all_raw:
@@ -262,19 +298,8 @@ def run_opencv_detection(image, model_type, confidence_threshold=0.5, nms_thresh
                     detections_list.append(all_raw[i])
 
     elif model_type in ["yolov3", "yolov3_tiny"]:
-        # Get paths
-        cfg_name = "yolov3.cfg" if model_type == "yolov3" else "yolov3-tiny.cfg"
-        weights_name = "yolov3.weights" if model_type == "yolov3" else "yolov3-tiny.weights"
-
-        cfg_path = os.path.join(YOLO_COCO_DIR, cfg_name)
-        weights_path = os.path.join(YOLO_COCO_DIR, weights_name)
         labels_path = os.path.join(YOLO_COCO_DIR, 'coco.names')
-
-        if is_lfs_pointer(weights_path) or is_lfs_pointer(cfg_path):
-            raise FileNotFoundError("YOLO weights or configs are missing or not fully downloaded.")
-
         labels = open(labels_path).read().strip().split("\n")
-        net = cv2.dnn.readNetFromDarknet(cfg_path, weights_path)
 
         # Determine output layer names
         ln = net.getLayerNames()
@@ -287,8 +312,10 @@ def run_opencv_detection(image, model_type, confidence_threshold=0.5, nms_thresh
         # Larger input size = significantly better detection of small objects in crowded scenes
         input_size = 608 if model_type == "yolov3" else 416
         blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (input_size, input_size), swapRB=True, crop=False)
-        net.setInput(blob)
-        layerOutputs = net.forward(ln)
+        
+        with lock:
+            net.setInput(blob)
+            layerOutputs = net.forward(ln)
 
         boxes = []
         confidences = []

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Volume2, VolumeX, AlertTriangle, Play, Square, RefreshCw, Cpu, Activity } from 'lucide-react';
+import { Camera, Volume2, VolumeX, AlertTriangle, Play, Square, RefreshCw, Activity } from 'lucide-react';
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 
@@ -9,6 +9,7 @@ export default function WebcamDetector() {
   const [webcamActive, setWebcamActive] = useState(false);
   const [fps, setFps] = useState(0);
   const [activeDetectionsCount, setActiveDetectionsCount] = useState(0);
+  const [errorState, setErrorState] = useState(null);
   
   // Alerts state
   const [alertTarget, setAlertTarget] = useState('person');
@@ -54,9 +55,9 @@ export default function WebcamDetector() {
       gain.connect(audioCtx.destination);
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(660, audioCtx.currentTime); // Pitch
+      osc.frequency.setValueAtTime(660, audioCtx.currentTime);
       gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4); // Fade
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
 
       osc.start();
       osc.stop(audioCtx.currentTime + 0.4);
@@ -70,7 +71,6 @@ export default function WebcamDetector() {
     async function loadModel() {
       try {
         setModelLoading(true);
-        // Wait for tfjs backend setup
         await tf.ready();
         const loadedModel = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
         setModel(loadedModel);
@@ -101,7 +101,6 @@ export default function WebcamDetector() {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
           videoRef.current.play();
-          // Begin inference loop
           lastTimeRef.current = performance.now();
           frameCountRef.current = 0;
           animationFrameRef.current = requestAnimationFrame(inferenceLoop);
@@ -113,8 +112,6 @@ export default function WebcamDetector() {
       setErrorState("Failed to access camera stream. Please check browser permissions.");
     }
   };
-
-  const [errorState, setErrorState] = useState(null);
 
   const stopWebcam = () => {
     if (animationFrameRef.current) {
@@ -174,7 +171,6 @@ export default function WebcamDetector() {
     const ctx = canvas.getContext('2d');
     const W = canvas.width;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     predictions.forEach(p => {
@@ -182,27 +178,28 @@ export default function WebcamDetector() {
       const score = Math.round(p.score * 100);
       const isTarget = p.class === alertTarget;
 
-      // Mirror the X coordinate to match the CSS-flipped video.
-      // The canvas itself is NOT flipped, so we do the math here instead:
-      //   mirroredX = canvasWidth - x - boxWidth
       const mx = W - x - w;
 
-      // Draw bounding box
-      ctx.lineWidth = isTarget ? 4 : 2;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = isTarget ? '#ef4444' : '#10b981';
+
+      ctx.lineWidth = isTarget ? 3.5 : 2;
       ctx.strokeStyle = isTarget ? '#ef4444' : '#10b981';
       ctx.strokeRect(mx, y, w, h);
 
+      ctx.shadowBlur = 0;
+
       // Label background
       ctx.fillStyle = isTarget ? '#ef4444' : '#10b981';
-      const labelText = `${p.class} (${score}%)`;
-      ctx.font = 'bold 11px Inter, sans-serif';
+      const labelText = `${p.class.toUpperCase()} [${score}%]`;
+      ctx.font = 'bold 9px Fira Code, monospace';
       const textWidth = ctx.measureText(labelText).width;
 
-      ctx.fillRect(mx, y - 20 > 0 ? y - 20 : y, textWidth + 10, 20);
+      ctx.fillRect(mx, y - 18 > 0 ? y - 18 : y, textWidth + 8, 18);
 
-      // Label Text — readable because canvas is NOT CSS-flipped
+      // Label Text
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(labelText, mx + 5, y - 20 > 0 ? y - 6 : y + 14);
+      ctx.fillText(labelText, mx + 4, y - 18 > 0 ? y - 5 : y + 12);
     });
   };
 
@@ -211,7 +208,7 @@ export default function WebcamDetector() {
       
       {/* Sidebar Controllers */}
       <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', height: 'fit-content' }}>
-        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
           <Camera size={20} className="text-gradient" /> Live Camera
         </h2>
 
@@ -219,21 +216,21 @@ export default function WebcamDetector() {
         <button 
           onClick={webcamActive ? stopWebcam : startWebcam}
           disabled={modelLoading}
-          className="glass-panel"
           style={{
             padding: '0.85rem',
-            background: webcamActive ? 'rgba(239, 68, 68, 0.15)' : 'var(--primary-gradient)',
+            background: webcamActive ? 'rgba(239, 68, 68, 0.08)' : 'var(--primary-gradient)',
             border: webcamActive ? '1px solid rgba(239, 68, 68, 0.3)' : 'none',
             borderRadius: '8px',
             color: webcamActive ? '#f87171' : '#fff',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: modelLoading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.25s',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem',
-            opacity: modelLoading ? 0.5 : 1
+            opacity: modelLoading ? 0.4 : 1,
+            boxShadow: webcamActive ? 'none' : '0 0 15px rgba(16,185,129,0.2)'
           }}
         >
           {modelLoading ? (
@@ -242,29 +239,28 @@ export default function WebcamDetector() {
             </>
           ) : webcamActive ? (
             <>
-              <Square size={16} fill="#f87171" /> Stop Camera Feed
+              <Square size={16} fill="#f87171" style={{ stroke: 'none' }} /> Stop Camera Feed
             </>
           ) : (
             <>
-              <Play size={16} fill="#fff" /> Start Camera Feed
+              <Play size={16} fill="#fff" style={{ stroke: 'none' }} /> Start Camera Feed
             </>
           )}
         </button>
 
         {/* Alerts Configuration */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>Target Alerts</h3>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>Target Alerts</h3>
           
           {/* Target class drop list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Identify Object</label>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Identify Object</label>
             <select 
               value={alertTarget} 
               onChange={(e) => setAlertTarget(e.target.value)}
               style={{
-                padding: '0.65rem',
+                padding: '0.75rem',
                 borderRadius: '8px',
-                background: 'rgba(255,255,255,0.05)',
                 border: '1px solid var(--border-color)',
                 color: 'var(--text-primary)',
                 outline: 'none',
@@ -279,8 +275,8 @@ export default function WebcamDetector() {
           </div>
 
           {/* Sound enable toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.2rem 0' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Sound Notification</span>
+          <div style={{ display: 'flex', alignItems: 'center', justify: 'space-between', padding: '0.2rem 0' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Sound Notification</span>
             <button 
               onClick={() => setSoundEnabled(!soundEnabled)}
               style={{
@@ -290,27 +286,28 @@ export default function WebcamDetector() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem'
+                gap: '0.25rem',
+                transition: 'color 0.2s'
               }}
             >
-              {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              {soundEnabled ? <Volume2 size={20} className="text-glow-primary" /> : <VolumeX size={20} />}
             </button>
           </div>
         </div>
 
         {/* System telemetry info */}
         {webcamActive && (
-          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255,255,255,0.01)' }}>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Engine Telemetry</h4>
+          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(0,0,0,0.01)' }}>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', color: 'var(--text-primary)' }}>Engine Telemetry</h4>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Frame Rate</span>
-              <span style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }} className="text-glow-green">
                 <Activity size={12} /> {fps} FPS
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Detections</span>
-              <span style={{ fontWeight: 600 }}>{activeDetectionsCount} objects</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Active Objects</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{activeDetectionsCount}</span>
             </div>
           </div>
         )}
@@ -320,27 +317,43 @@ export default function WebcamDetector() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         
         {errorState && (
-          <div className="glass-panel" style={{ padding: '1rem 1.5rem', background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.9rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="glass-panel" style={{ padding: '1rem 1.5rem', background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.9rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <AlertTriangle size={18} />
             <span>{errorState}</span>
           </div>
         )}
 
-        <div style={{
+        {/* Webcam HUD Frame */}
+        <div className="hud-frame" style={{
           position: 'relative',
-          background: '#020617',
-          borderRadius: '16px',
-          border: isAlertTriggered ? '2px solid #ef4444' : '1px solid var(--border-color)',
-          boxShadow: isAlertTriggered ? '0 0 25px rgba(239, 68, 68, 0.4)' : 'none',
+          border: isAlertTriggered ? '2px solid #ef4444' : '1px solid rgba(16, 185, 129, 0.25)',
+          boxShadow: isAlertTriggered ? '0 0 25px rgba(239, 68, 68, 0.45), inset 0 0 20px rgba(239, 68, 68, 0.2)' : 'none',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           overflow: 'hidden',
           width: '100%',
           aspectRatio: '640/480',
-          transition: 'border 0.15s, box-shadow 0.15s'
+          transition: 'border 0.2s, box-shadow 0.2s',
+          background: '#f8fafc'
         }}>
           
+          {/* HUD Corner Brackets */}
+          <div className={`hud-bracket hud-bracket-tl`} style={{ borderColor: isAlertTriggered ? '#ef4444' : 'var(--primary)' }} />
+          <div className={`hud-bracket hud-bracket-tr`} style={{ borderColor: isAlertTriggered ? '#ef4444' : 'var(--primary)' }} />
+          <div className={`hud-bracket hud-bracket-bl`} style={{ borderColor: isAlertTriggered ? '#ef4444' : 'var(--primary)' }} />
+          <div className={`hud-bracket hud-bracket-br`} style={{ borderColor: isAlertTriggered ? '#ef4444' : 'var(--primary)' }} />
+
+          {/* Rotating Radar sweep line when active */}
+          {webcamActive && (
+            <div className="hud-radar-sweep" />
+          )}
+
+          {/* Laser vertical scan line */}
+          {webcamActive && (
+            <div className="hud-scan-line" style={{ background: isAlertTriggered ? 'linear-gradient(180deg, rgba(239, 68, 68, 0) 0%, rgba(239, 68, 68, 0.4) 50%, rgba(239, 68, 68, 0) 100%)' : undefined, boxShadow: isAlertTriggered ? '0 0 15px rgba(239, 68, 68, 0.5)' : undefined }} />
+          )}
+
           {modelLoading && (
             <div style={{
               position: 'absolute',
@@ -350,12 +363,13 @@ export default function WebcamDetector() {
               justifyContent: 'center',
               gap: '1rem',
               textAlign: 'center',
-              padding: '2rem'
+              padding: '2rem',
+              zIndex: 6
             }}>
               <div className="spinner" style={{ width: '40px', height: '40px' }} />
               <div>
-                <h4 style={{ fontWeight: 600 }}>Assembling TensorFlow.js Sandbox...</h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', maxWidth: '300px', marginTop: '0.2rem' }}>Downloading client-side MobileNetV2 SSD. Runs completely inside your web browser.</p>
+                <h4 style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Assembling TensorFlow.js Sandbox...</h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', maxWidth: '340px', marginTop: '0.2rem' }}>Downloading client-side MobileNetV2 SSD. Runs completely locally in your browser.</p>
               </div>
             </div>
           )}
@@ -366,21 +380,23 @@ export default function WebcamDetector() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: '1rem',
-              color: 'var(--text-secondary)'
+              color: 'var(--text-secondary)',
+              zIndex: 6
             }}>
               <div style={{
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                background: 'rgba(255,255,255,0.03)',
-                color: 'var(--text-muted)',
+                background: 'rgba(0,0,0,0.02)',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: '1px solid var(--border-color)'
               }}>
                 <Camera size={32} />
               </div>
-              <span style={{ fontSize: '0.9rem' }}>Camera feed is currently offline. Press "Start Camera" above.</span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Webcam scanner feed offline. Press "Start Camera Feed".</span>
             </div>
           )}
 
@@ -394,7 +410,7 @@ export default function WebcamDetector() {
             muted
           />
 
-          {/* Canvas drawing overlay — NOT CSS-flipped; boxes are mirrored in drawPredictions() */}
+          {/* Canvas drawing overlay */}
           <canvas 
             ref={canvasRef}
             width="640"
@@ -406,7 +422,8 @@ export default function WebcamDetector() {
               width: '100%',
               height: '100%',
               display: webcamActive ? 'block' : 'none',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              zIndex: 3
             }}
           />
 
@@ -414,22 +431,25 @@ export default function WebcamDetector() {
           {isAlertTriggered && webcamActive && (
             <div style={{
               position: 'absolute',
-              top: '1rem',
+              top: '1.25rem',
               left: '50%',
               transform: 'translateX(-50%)',
-              background: 'rgba(239, 68, 68, 0.9)',
+              background: 'rgba(239, 68, 68, 0.95)',
               color: '#ffffff',
-              padding: '0.5rem 1.25rem',
-              borderRadius: '20px',
+              padding: '0.6rem 1.75rem',
+              borderRadius: '30px',
               fontSize: '0.85rem',
-              fontWeight: 700,
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
-              zIndex: 10
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.6)',
+              zIndex: 10,
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              fontFamily: 'var(--font-mono)',
+              animation: 'pulse-glow 1s infinite'
             }}>
-              <AlertTriangle size={16} /> TARGET DETECTED: {alertTarget.toUpperCase()}
+              <AlertTriangle size={16} /> TARGET ACQUIRED: {alertTarget.toUpperCase()}
             </div>
           )}
 

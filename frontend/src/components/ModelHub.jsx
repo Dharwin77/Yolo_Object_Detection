@@ -53,7 +53,6 @@ export default function ModelHub({ backendOnline }) {
           if (data.status === 'success' || data.status === 'error' || data.status === 'idle') {
             clearInterval(progressPollIntervalRef.current);
             progressPollIntervalRef.current = null;
-            // Refetch all model status after download concludes
             fetchStatus();
           }
         }
@@ -90,7 +89,7 @@ export default function ModelHub({ backendOnline }) {
       
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem' }}>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>
           Model <span className="text-gradient">Manager Hub</span>
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
@@ -100,10 +99,10 @@ export default function ModelHub({ backendOnline }) {
 
       {/* Connection State Warning */}
       {!backendOnline && (
-        <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.25)', color: '#f87171', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)', color: '#f87171', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <AlertCircle size={22} style={{ flexShrink: 0 }} />
           <div>
-            <h4 style={{ fontWeight: 600, fontSize: '0.95rem' }}>Python Server Disconnected</h4>
+            <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Python Server Disconnected</h4>
             <p style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '0.1rem' }}>The Model Hub requires the Python Flask API backend to check system file storage. Please run "python app.py".</p>
           </div>
         </div>
@@ -113,20 +112,20 @@ export default function ModelHub({ backendOnline }) {
       {downloadProgress && downloadProgress.status === 'downloading' && (
         <div className="glass-panel" style={{
           padding: '1.5rem',
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(20,27,45,0.6) 100%)',
-          borderColor: 'rgba(99, 102, 241, 0.3)'
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(255,255,255,0.4) 100%)',
+          borderColor: 'rgba(16, 185, 129, 0.2)'
         }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
             <RefreshCw className="spinner" size={16} /> Downloading Weights for {downloadProgress.model === 'yolov3' ? 'YOLOv3' : 'YOLOv3-Tiny'}...
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Downloading from Hugging Face CDN mirrors (ultra-fast)</span>
-              <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{downloadProgress.progress}%</span>
+              <span style={{ fontWeight: 700, color: 'var(--primary)' }} className="text-glow-primary">{downloadProgress.progress}%</span>
             </div>
-            <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${downloadProgress.progress}%`, background: 'var(--primary-gradient)', borderRadius: '4px', transition: 'width 0.2s ease-out' }} />
+            <div style={{ height: '6px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${downloadProgress.progress}%`, background: 'var(--primary-gradient)', borderRadius: '3px', transition: 'width 0.2s ease-out' }} />
             </div>
           </div>
         </div>
@@ -155,25 +154,28 @@ export default function ModelHub({ backendOnline }) {
                     color: isReady ? '#10b981' : '#f59e0b',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    border: isReady ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(245,158,11,0.15)',
+                    boxShadow: isReady ? '0 0 10px rgba(16, 185, 129, 0.05)' : 'none'
                   }}>
                     {key === 'mobilenet_ssd' ? <Cpu size={24} /> : <Database size={24} />}
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
                       {info.name}
                       <span style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        padding: '0.15rem 0.4rem',
+                        fontSize: '0.65rem',
+                        fontWeight: 800,
+                        padding: '0.2rem 0.5rem',
                         borderRadius: '10px',
-                        background: isReady ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                        color: isReady ? '#34d399' : '#f87171'
+                        background: isReady ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
+                        color: isReady ? '#059669' : '#f87171',
+                        border: isReady ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(239,68,68,0.15)'
                       }}>
                         {isReady ? 'READY TO RUN' : 'ASSETS MISSING'}
                       </span>
                     </h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                       {key === 'mobilenet_ssd' && 'Preloaded Caffe framework. Instantly runnable on all platforms.'}
                       {key === 'yolov3' && 'Full 80-category COCO model. High accuracy, requires 240MB weights file download.'}
                       {key === 'yolov3_tiny' && 'Reduced parameter YOLOv3 network. High performance on standard CPUs, requires 35MB weights.'}
@@ -183,8 +185,8 @@ export default function ModelHub({ backendOnline }) {
 
                 <div>
                   {isReady ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.85rem', fontWeight: 600 }}>
-                      <CheckCircle size={16} /> Ready
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }} className="text-glow-green">
+                      <CheckCircle size={16} /> Active
                     </div>
                   ) : (
                     <button
@@ -193,10 +195,10 @@ export default function ModelHub({ backendOnline }) {
                       className="glass-panel"
                       style={{
                         padding: '0.5rem 1rem',
-                        background: 'rgba(255,255,255,0.03)',
-                        color: '#fff',
+                        background: 'rgba(0,0,0,0.02)',
+                        color: 'var(--text-primary)',
                         fontSize: '0.8rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.4rem',

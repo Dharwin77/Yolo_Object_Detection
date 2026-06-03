@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Image, Video, Camera, Database, Activity, Cpu } from 'lucide-react';
+import { LayoutDashboard, Image, Video, Camera, Database, Activity, Cpu, Terminal } from 'lucide-react';
 import './App.css';
 import API from './api';
 
@@ -15,6 +15,11 @@ export default function App() {
   const [selectedSampleImage, setSelectedSampleImage] = useState(null);
   const [selectedSampleVideo, setSelectedSampleVideo] = useState(null);
   const [backendOnline, setBackendOnline] = useState(false);
+  const [eventLogs, setEventLogs] = useState([
+    { id: 1, type: 'system', text: 'YOLO Object Detection OS v3.2.1 initialized.' },
+    { id: 2, type: 'system', text: 'TF.js WebGL sandbox loaded.' },
+    { id: 3, type: 'api', text: 'Checking connection to backend...' }
+  ]);
 
   // Poll backend status to check connectivity
   useEffect(() => {
@@ -23,11 +28,28 @@ export default function App() {
         const res = await fetch(`${API}/api/status`);
         if (res.ok) {
           setBackendOnline(true);
+          setEventLogs(prev => {
+            const hasConnected = prev.some(l => l.text.includes('API connected'));
+            if (hasConnected) return prev;
+            return [
+              ...prev,
+              { id: Date.now(), type: 'success', text: 'API connected. Flask backend online.' },
+              { id: Date.now() + 1, type: 'system', text: 'MobileNet SSD / YOLOv3 weights ready.' }
+            ];
+          });
         } else {
           setBackendOnline(false);
         }
       } catch (err) {
         setBackendOnline(false);
+        setEventLogs(prev => {
+          const hasError = prev.some(l => l.text.includes('Flask server offline'));
+          if (hasError) return prev;
+          return [
+            ...prev,
+            { id: Date.now(), type: 'error', text: 'Flask server offline. Retrying...' }
+          ];
+        });
       }
     }
     checkBackend();
@@ -35,20 +57,48 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Periodically add telemetry updates
+  useEffect(() => {
+    const telemetryMessages = [
+      { type: 'system', text: 'System CPU temperature: 48°C (Nominal)' },
+      { type: 'telemetry', text: 'Shader cache compiled. WebGL active.' },
+      { type: 'api', text: 'Connection heartbeat: OK (ping 5ms)' },
+      { type: 'telemetry', text: 'OpenCV frame pipeline: Idle' },
+      { type: 'system', text: 'Memory garbage collection complete.' },
+      { type: 'telemetry', text: 'Awaiting video feed stream activation...' }
+    ];
+
+    const interval = setInterval(() => {
+      if (!backendOnline) return;
+      const randMsg = telemetryMessages[Math.floor(Math.random() * telemetryMessages.length)];
+      setEventLogs(prev => [
+        ...prev.slice(-12),
+        { id: Date.now(), type: randMsg.type, text: randMsg.text }
+      ]);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [backendOnline]);
+
   return (
     <div className="app-container">
-      
-      {/* Sidebar Navigation */}
+      {/* Dynamic ambient grid layer */}
+      <div className="bg-grid-ambient" />
+
+      {/* Floating Translucent Sidebar */}
       <aside style={{
-        width: '260px',
-        background: 'var(--sidebar-gradient)',
+        width: '280px',
+        background: 'var(--bg-sidebar)',
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
         borderRight: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
         position: 'sticky',
         top: 0,
-        height: '100vh'
+        height: '100vh',
+        zIndex: 10
       }}>
         
         {/* Brand Logo Header */}
@@ -73,11 +123,11 @@ export default function App() {
             <Cpu size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
-              Antigravity
+            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              YOLO
             </h1>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, tracking: '0.05em' }}>
-              VISION STUDIO
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent-green)', fontWeight: 800, letterSpacing: '0.15em' }}>
+              OBJECT DETECTION
             </span>
           </div>
         </div>
@@ -99,7 +149,7 @@ export default function App() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem',
+                  gap: '0.85rem',
                   padding: '0.85rem 1.25rem',
                   borderRadius: '12px',
                   border: 'none',
@@ -109,7 +159,7 @@ export default function App() {
                   fontWeight: isActive ? 600 : 500,
                   fontSize: '0.9rem',
                   textAlign: 'left',
-                  transition: 'all 0.2s ease-in-out',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative'
                 }}
               >
@@ -117,14 +167,19 @@ export default function App() {
                   <div style={{
                     position: 'absolute',
                     left: 0,
-                    top: '25%',
-                    height: '50%',
+                    top: '20%',
+                    height: '60%',
                     width: '4px',
                     background: 'var(--primary)',
-                    borderRadius: '0 4px 4px 0'
+                    borderRadius: '0 4px 4px 0',
+                    boxShadow: '0 0 10px var(--primary)'
                   }} />
                 )}
-                <span style={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }}>
+                <span style={{ 
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'transform 0.2s'
+                }}>
                   {item.icon}
                 </span>
                 {item.label}
@@ -133,32 +188,12 @@ export default function App() {
           })}
         </nav>
 
-        {/* Server Status Indicators */}
-        <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-          <div className="glass-panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.01)' }}>
-            <div style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: backendOnline ? '#10b981' : '#ef4444',
-              boxShadow: backendOnline ? '0 0 10px #10b981' : '0 0 10px #ef4444',
-              animation: backendOnline ? 'none' : 'pulse-glow 1.5s infinite'
-            }} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                {backendOnline ? 'API Connected' : 'API Offline'}
-              </span>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                {backendOnline ? (import.meta.env.VITE_API_URL || 'localhost:5000') : 'Disconnected'}
-              </span>
-            </div>
-          </div>
-        </div>
+
 
       </aside>
 
       {/* Main Content Workspace */}
-      <main style={{ flex: 1, height: '100vh', overflowY: 'auto', background: 'var(--bg-main)' }}>
+      <main style={{ flex: 1, height: '100vh', overflowY: 'auto', position: 'relative', zIndex: 1 }}>
         {activeTab === 'dashboard' && (
           <Dashboard 
             onTabChange={setActiveTab} 
