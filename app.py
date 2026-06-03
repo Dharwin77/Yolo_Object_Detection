@@ -9,8 +9,10 @@ import base64
 import io
 from PIL import Image as PILImage
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # Directory setup
 WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -221,6 +223,10 @@ def run_opencv_detection(image, model_type, confidence_threshold=0.5, nms_thresh
         # Load Caffe Model
         prototxt = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.prototxt.txt')
         caffemodel = os.path.join(CAFFE_DIR, 'MobileNetSSD_deploy.caffemodel')
+        
+        if not os.path.exists(prototxt) or not os.path.exists(caffemodel) or is_lfs_pointer(caffemodel):
+            raise FileNotFoundError("MobileNet SSD Caffe model or prototxt is missing or corrupted. Please make sure the model files are present.")
+            
         net = cv2.dnn.readNetFromCaffe(prototxt, caffemodel)
 
         # --- Tiled detection strategy ---

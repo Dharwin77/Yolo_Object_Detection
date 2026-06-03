@@ -24,7 +24,8 @@ uploads/
 Object detection using video/output/
 
 # ── MobileNet SSD Caffe model weights (large binaries) ──────────────────────
-real-time-object-detection/*.caffemodel
+# Tracked in git for out-of-the-box functionality (23MB)
+
 
 # ── Node / Frontend ──────────────────────────────────────────────────────────
 frontend/node_modules/
